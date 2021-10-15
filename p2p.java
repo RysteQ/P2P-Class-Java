@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
+import java.math.BigInteger;
+import java.util.Scanner;
 
 /*
 Name: P2P
@@ -20,17 +22,32 @@ TODO 2) Create a CLI in a class called SimpleTerminal, this will be included in 
 TODO 3) Combine P2P and SimpleTerminal to create a P2P CLI communication application
 */
 
-class P2P {
-    public P2P(String addressToConnect_OPTIONAL, int portNumber, boolean connect_Host) {
-        if (connect_Host == false) {
-            client_or_host = true;
-            connect(addressToConnect_OPTIONAL, portNumber);
+public class p2p {
+    static Scanner input = new Scanner(System.in);
+
+    public static void main(String args[]) {
+        P2P okay = new P2P();
+
+        if (args[0].equals("k")) {
+            okay.setPassword("papagkaldso");
+            okay.setPort(4444);
+            okay.setAddress("127.0.0.1");
+            
+            okay.connect();
+            if (okay.isConnected() == false) System.out.println("ERRRROROROORORO");
+            okay.sendMessage("Hello !");
         } else {
-            client_or_host = false;
-            host(portNumber);
+            okay.setPassword("papagkalo");
+            okay.setPort(4444);
+            
+            okay.host();
+            
+            System.out.println(okay.receiveMessage());
         }
     }
+}
 
+class P2P {
     public void sendMessage(String msg) {
         if (isConnected()) {
             outputStream.println(msg);
@@ -61,14 +78,10 @@ class P2P {
                 outputStream.close();
                 inputStream.close();
 
-                if (client_or_host == false) {
-                    client.close();
-                } else {
-                    server.close();
-                }
+                client.close();
+                server.close();
             } catch (IOException e) {
-                System.out.println("Error: " + e.toString());
-                exit(-1);
+                exit(0);
             }
         } else {
             System.out.println("There is not an active connection at the moment");
@@ -80,34 +93,63 @@ class P2P {
         return connected;
     }
 
-    private void connect(String address, int portNumber) {
+    public void setPassword(String newPassword) {
+        password = newPassword;
+    }
+
+    public void setAddress(String newAddress) {
+        address = newAddress;
+    }
+
+    public void setPort(int port) {
+        portNumber = port;
+    }
+
+    public void connect() {
         try {
             client = new Socket(address, portNumber);
 
-            System.out.println("Connected to " + address + ":" + portNumber);
-
-            outputStream = new PrintWriter(client.getOutputStream());
+            outputStream = new PrintWriter(client.getOutputStream(), true);
             inputStream = new BufferedReader(new InputStreamReader(client.getInputStream()));
+ 
 
-            connected = true;
+            outputStream.println(password);
+
+            if (inputStream.readLine().equals("accepted")) {
+                System.out.println("Connected to " + address + ":" + portNumber);
+                connected = true;
+            } else {
+                System.out.println("Host has refused the connection");
+                
+                closeConnection();
+                exit(0);
+            }
         } catch (IOException e) {
             System.out.println("Error: " + e.toString());
             exit(-1);
         }
     }
 
-    private void host(int portNumber) {
+    public void host() {
         try {
             server = new ServerSocket(portNumber);
 
             System.out.println("Waiting for a connection.....");
-            client = server.accept();
-            System.out.println("\nClient " + client.getInetAddress().toString() + " has connected");
 
+            client = server.accept();
             outputStream = new PrintWriter(client.getOutputStream(), true);
             inputStream = new BufferedReader(new InputStreamReader(client.getInputStream()));
 
-            connected = true;
+            if (inputStream.readLine().equals(password)) {
+                System.out.println("\nClient " + client.getInetAddress().toString() + " has connected");
+                outputStream.println("accepted");
+                connected = true;
+            } else {
+                System.out.println("Rejected client" + client.getInetAddress() + ", incorrect password");
+                outputStream.println("refused");
+
+                closeConnection();
+            }
         } catch (IOException e) {
             System.out.println("Error: " + e.toString());
             exit(-1);
@@ -118,12 +160,15 @@ class P2P {
         System.exit(status);
     }
 
-    private boolean client_or_host;
+
     private ServerSocket server;
     private Socket client;
 
     private PrintWriter outputStream;
     private BufferedReader inputStream;
 
+    private int portNumber = 4444;
+    private String address;
+    private String password = "";
     private boolean connected = false;
 }
