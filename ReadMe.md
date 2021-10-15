@@ -10,4 +10,4 @@ This is a simple P2P class written in java, as of now it's nothing special and I
 
 ## Notes
 
-This is a project I have created with a single day of learning Java after now using Java for a few months, because of that there might be some bad practices.
+This is a project I have created in a single day of learning Java after now using Java for a few months, because of that there might be some bad programming practices.
